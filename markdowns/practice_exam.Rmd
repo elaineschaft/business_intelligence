@@ -9,7 +9,19 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Q1
+In our first class of the semester, I introduced the concept of "data encoding." The chart below illustrates the U.S. Nominal Gross Domestic Product (GDP) over time, along with key information about presidential administrations. Which encoding technique is used to differentiate between political parties?
+
+answer: Color (lines and text labels) is used to distinguish between political parties in the chart (blue for Democrats, red for Republicans). 
+
+## Q2
+In the video below, counties are encoded using the x- and y-position.
+
+answer: TRUE
+The statement is true since we use the x- and y-position to draw the county boundaries
+
 ## Q3
+You have just fetched API data in R about the U.S. Gross Domestic Product (GDP). The data is stored in a list object named lst as follows:
 
 ```{r}
 lst = list( 
@@ -22,11 +34,219 @@ lst = list(
 lst[[2]]
 ```
 
-## Q4 What is the total number of observations in the hibp dataset
+Using lst[[2]] will return a list.
+
+Answer: TRUE
+
+## Q4
+What is the total number of observations in the hibp dataset
 
 ```{r}
-library(jsonlite)
-json_file <- 
-jsonlite::
+hibp = jsonlite::fromJSON("business_intelligence/markdowns/hibp_data.json")
+dplyr::glimpse(hibp)
 ```
 
+answer: 42,759
+
+## Q5
+The BreachName for the 500th row in the  hibp dataset Download hibp dataset is Dropbox. 
+
+```{r}
+hibp[500, ]
+```
+
+answer: FALSE
+
+# Q6
+How many observations in the hibp dataset Download hibp datasetcontain emails with the domain miamioh.edu?
+
+```{r}
+hibp$Email |> stringr::str_detect("miamioh.edu") |> table()
+```
+
+answer:7059
+
+## Q7
+Per Wikipedia's robots.txt, we are allowed to scrape the following page: https://en.wikipedia.org/wiki/Miami_UniversityLinks to an external site.
+
+```{r}
+robotstxt::paths_allowed("https://en.wikipedia.org/wiki/Miami_University")
+
+# or 
+#robotstxt::paths_allowed(paths = "wiki/Miami_University", "https://en.wikipedia.org/")
+```
+
+answer: TRUE
+
+## Q8
+Please write a script to extract the URLs/links for all 27 academic regulation policies at https://miamioh.edu/policy-library/students/undergraduate/academic-regulations/index.htmlLinks to an external site..
+
+You should save the links for all these policies in a character vector titled mu_policies. 
+
+Requirements:
+
+Provide your code in the text box below.
+Ensure the packages are loaded and/or function names are preceded by the package name (e.g., rvest::read_html).
+It would be great if you could fix the line breaks (when you paste your code in the box, i.e., add Enter whenever needed).
+ 
+```{r}
+'https://miamioh.edu/policy-library/students/undergraduate/academic-regulations/index.html' |> 
+  rvest::read_html() |> 
+  rvest::html_elements('a.news-lockup__body-link') |> 
+  rvest::html_attr(name = 'href') |> 
+  # optional to make absolute URLs instead of partials
+  rvest::url_absolute('https://miamioh.edu/policy-library/') -> mu_policies
+
+mu_policies
+```
+
+## Q9
+I would like you to scrape the Miami Swimming and Diving RosterLinks to an external site. and return a data frame (or a tibble) that contains two columns: name and their location (where they are from?). 
+
+Requirements:
+
+Scrape the names and years for only the female and male athletes.
+The resulting data frame/tibble should be stored in swim_df. 
+It would be great if you could fix the line breaks (when you paste your code in the box, i.e., add Enter whenever needed).
+ 
+```{r}
+'https://miamiredhawks.com/sports/swimming-and-diving/roster' |> 
+  rvest::read_html() -> page
+
+page |> 
+  rvest::html_elements('div > a > h3') |> 
+  rvest::html_text2() -> name
+
+page |> 
+  rvest::html_elements('span.s-person-card__content__person__location-item.flex.items-center') |> 
+  rvest::html_text() -> location
+
+swim_df = data.frame(name[1:60], location) # last four names are the coaches
+```
+
+## Q10
+From the Weather.gov API find the gridX for Naples, Florida. Please refer to their FAQs (especially the section under How do I get a forecast for a location from the API?) for an example of how they got the forecasts for the Washington Monument. Put the numeric number for the gridX below.
+
+answer:
+By googling the lat and long for Naples Florida and passing that to the API similar to what was done in: https://weather-gov.github.io/api/general-faqs,Links to an external site. we craft the request as follows:
+
+Request: https://api.weather.gov/points/26.142,-81.7948
+By examining the request in your browser (or R), you will find that the answer contains a list called properties:
+```{r}
+"properties": {
+        "@id": "https://api.weather.gov/points/26.142,-81.7948",
+        "@type": "wx:Point",
+        "cwa": "MFL",
+        "forecastOffice": "https://api.weather.gov/offices/MFL",
+        "gridId": "MFL",
+        "gridX": 45,
+        "gridY": 60,
+```
+
+## Q11
+The toxic_ips_oct2025.csv Download toxic_ips_oct2025.csvcontains 10 toxic IP addresses reported to be involved in SPAM or cyber-attacks. Your task is to use the https://ip-api.com/docs/api:jsonLinks to an external site. API to extract the following fields from the returned JSON for each IP:
+
+"status", "continent", "country", "countryCode", "region", "regionName", "city", "district", "zip", "lat", "lon", "timezone", "currency", "isp", "org", "as", and "query".
+
+The expected output is a 10-row and 17-column data frame that contains the requested fields for all IP addresses. Please name this df ip_df.
+
+Notes:
+
+You do not need an API key to use ip-api.com. Send requests to the specified endpoint.
+The free access is limited to 45 requests per minute, so if you exceed that during testing, you will receive an error message. If you wait an additional minute, your limit will reset again.
+Some of the fields above may return no data, but keep them in the final data frame.
+It would be great if you could fix the line breaks (when you paste your code in the box, i.e., add Enter whenever needed).
+
+```{r}
+toxic_ips = readr::read_csv("data/toxic_ips_oct2025.csv")
+
+ip_addresses = toxic_ips$IP
+
+x = ip_addresses[1]
+
+ip_api = function(x){
+  paste0(
+    "http://ip-api.com/json/", x,
+    "?fields=status,message,continent,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,currency,isp,org,as,query") |> 
+    jsonlite::fromJSON() -> response
+  
+  response |> as.data.frame() -> df
+  
+  return(df)
+}
+
+ip_df = purrr::map_df(.x = ip_addresses, .f = ip_api)
+
+ip_df |> tibble::tibble() # so it prints better
+```
+
+## Q12
+When you read the CSV file located at https://raw.githubusercontent.com/fmegahed/isa401/main/data/wb_hospital_beds.csvLinks to an external site. into R using the code below, the object wb_tbl is:
+```{r}
+wb_tbl = readr::read_csv('https://raw.githubusercontent.com/fmegahed/isa401/main/data/wb_hospital_beds.csv')
+```
+
+answer: It is not tidy since the years are in different columns and it is not consistent since we have a lot of missing data.
+
+## Q13 & Q14
+The following 2 questions pertain to the ntse_endowment_us_and_canada_2020.csvDownload ntse_endowment_us_and_canada_2020.csv
+
+A description of each of the 8 variables for that dataset is below:
+
+id:  The IPEDS Unit ID Number (Unitid) is available only for U.S. colleges, universities, and state university system offices. There are no IPEDS ID numbers for Canadian institutions or for non-profit higher education organizations that do not enroll students. 
+institution: name of school or school's foundation
+state: empty if not in a U.S. state
+institution_type: type of institution
+enrollment: number of full time equivalent (FTE) students enrolled in 2020
+endowment_fy_20: FY20 Total Endowment Market Value (in $1,000s)
+hbcu_indicator: 1=HBCU; 2=Non-HBCU; empty/NA = not available
+carnegie_category: The Carnegie Classification System identifies U.S. colleges and universities by their highest degree awarded and research intensity, where:
+1=Associate's
+2=Baccalaureate
+3=Master's
+4=Doctoral/Research
+5=Special focus (law, medicine, theology, etc.)
+0=Not Applicable
+empty/NA = not available
+
+## Q13
+When discussing the concept of tidy data, we have defined a rule that every row should contain one observation. In class, we discussed that this is closely related to the concept of "unit of analysis".
+
+In one word, what is the the unit of analysis for the ntse_endowment_us_and_canada_2020.csv ?
+
+answer: Every observation contains data for one institution (also university, unitid).
+
+## Q14
+Build on the code below, answer the following:
+```{r}
+# reading the data from my github repo to avoid an issues with file location
+ntse_tbl = readr::read_csv('https://raw.githubusercontent.com/fmegahed/isa401/main/data/ntse_endowment_us_and_canada_2020.csv')
+
+# a glimpse of the data
+# for this analysis, do NOT convert chr to factors (do not worry about this)
+dplyr::glimpse(ntse_tbl)
+```
+
+If ntse_tbl is already technically correct, please indicate that in the textbox below. Otherwise, please paste the code to convert the ntse_tbl into a technically correct dataset.
+
+answer: 
+The data is NOT technically correct since the id column should be a chr/factor, and the last two columns should be categorical. The code needed to make this technically correct is as follows:
+```{r}
+ntse_tbl$id = as.factor(ntse_tbl$id)
+ntse_tbl$hbcu_indicator = as.factor(ntse_tbl$hbcu_indicator)
+ntse_tbl$carnegie_category = as.factor(ntse_tbl$carnegie_category)
+```
+
+## Q15
+In 3-5 bullet points and about 10-20 words per bullet point, please answer this question from Google's interview warmup for data analytic jobs?
+
+answer:
+When analyzing very large or complex datasets that exceed spreadsheet limits or require advanced data manipulation.
+
+When performing statistical modeling, forecasting, or machine learning that spreadsheets and SQL cannot easily handle.
+
+When automating repeatable analysis workflows so results update quickly without manual spreadsheet steps.
+
+When creating advanced visualizations or reproducible reports that integrate analysis, code, and outputs together.
+
+When combining data cleaning, analysis, and visualization in one script for efficiency and reproducibility.
