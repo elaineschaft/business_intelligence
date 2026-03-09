@@ -1,0 +1,60 @@
+---
+title: "Exam1"
+author: "Elaine Schaft"
+date: "2026-03-09"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+    code_download: TRUE
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Q1
+A short-answer question about data encoding (identifying variable-to-encoding mappings from a chart)
+
+## Q2
+A multiple-choice question about a technology discussed in class.
+
+## Q3
+A True/False question about robots.txt.
+
+## Q4-6
+Short-answer questions based on reading and exploring an Airbnb dataset. 
+
+## Q7
+A short-answer question about tidy data.
+
+## Q8
+A short-answer question about the technical correctness of a dataset.
+
+## Q9
+A True/False question about R basics.
+
+## Q10
+A short-answer API question based on the Open-Meteo Historical Weather API.
+https://open-meteo.com/en/docs/historical-weather-api
+
+## Q11
+A code-based API question using the FCC Census Block API. You will need to loop through rows of a CSV and call the API for each row.
+https://geo.fcc.gov/api/census/
+
+## Q12
+A code-based web scraping question where you will scrape a Miami University webpage.
+
+## Q13
+A second code-based web scraping question on a different Miami University webpage than Q12.
+
+## Q14
+A code-based question on structured text extraction.
+
+## Q15
+A short-answer reflection question based on a topic discussed in class.
+
+## Q16
+A one-word short-answer question about an R package discussed in class
