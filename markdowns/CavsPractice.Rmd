@@ -1,0 +1,97 @@
+---
+title: "Cavs Practice"
+author: "Elaine Schaft"
+date: "2026-02-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Web Scraping Cavs
+
+```{r}
+robotstxt::paths_allowed("https://www.nba.com/team/1610612739/schedule")
+```
+
+```{r}
+cavs_schedule <- httr2::request("https://www.nba.com/team/1610612739/schedule") |>
+    httr2::req_user_agent("An ISA 401 Bot from Miami University - elaine schaft") |>
+    httr2::req_perform()
+
+cavs_webpage = cavs_schedule |> httr2::resp_body_raw() |> rvest::read_html()
+cavs_webpage
+```
+
+```{r}
+cavs_webpage |>
+  rvest::html_elements(".Block_blockContent__6iJ_n") |>
+  rvest::html_table() -> schedule
+
+schedule
+```
+
+
+## Scraping Spotify
+
+```{r}
+robotstxt::paths_allowed("https://kworb.net/spotify/country/global_daily.html")
+```
+
+```{r}
+spotify_top50 <- httr2::request("https://kworb.net/spotify/country/global_daily.html") |>
+    httr2::req_user_agent("An ISA 401 Bot from Miami University - elaine schaft") |>
+    httr2::req_perform()
+
+spotify_charts = spotify_top50 |> httr2::resp_body_raw() |> rvest::read_html()
+spotify_charts
+```
+
+```{r}
+spotify_charts |>
+  rvest::html_elements("a:nth-child(2) , #spotifydaily a:nth-child(1) , #spotifydaily a:nth-child(1)") |>
+  rvest::html_text2()-> song_results
+song_results
+
+song_results = song_results[1:400]
+tail(song_results)
+
+song_titles = song_results[ seq(from = 1, to = 400, by = 2)]
+song_artist = song_results[ seq(from = 2, to = 400, by = 2)]
+
+library(tidyverse)
+library(rvest)
+library(httr2)
+
+spotify_charts |>
+  rvest::html_elements("a:nth-child(2)") |>
+  rvest::html_attr("href") -> song_link
+song_link
+
+spotify_df = data.frame(title = song_titles, artist = song_artist, link = song_link)
+
+spotify_df |> slice(28)
+
+```
+
+```{r}
+# Accountancy
+mu_accountancy = rvest::read_html("https://miamioh.edu/fsb/directory/?up=/query/all/all/Accountancy/all")
+
+mu_accountancy |>
+  rvest::html_elements("tr > td:nth-child(1)") |> 
+  rvest::html_text2() -> dept_name
+
+mu_accountancy |> 
+  rvest::html_elements("tr > td:nth-child(3) > strong > a") |> 
+  rvest::html_text2() -> fac_name
+
+mu_accountancy |> 
+  rvest::html_elements("tr > td:nth-child(3) > strong > a") |> 
+  rvest::html_attr("href") -> fac_webpage
+
+df = data.frame(dept_name, fac_name, fac_webpage)
+```
+
+

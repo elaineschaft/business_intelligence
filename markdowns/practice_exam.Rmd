@@ -1,0 +1,32 @@
+---
+title: "Practice Exam"
+author: "Elaine Schaft"
+date: "2026-03-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Q3
+
+```{r}
+lst = list( 
+  gdp = data.frame(year = c(2020, 2021, 2022), values = c(19200, 20500, 21300), units = "USD billions" ),
+  population = list(country = "United States", year = c(2020, 2021, 2022), values = c(325, 331, 335), units = "millions"),
+  indicators = c("gdp", "population", "inflation"), # Available indicators
+  inflation_rate = 3.2 # Latest inflation rate as a single value
+)
+
+lst[[2]]
+```
+
+## Q4 What is the total number of observations in the hibp dataset
+
+```{r}
+library(jsonlite)
+json_file <- 
+jsonlite::
+```
+

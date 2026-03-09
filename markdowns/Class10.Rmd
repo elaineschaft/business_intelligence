@@ -1,0 +1,127 @@
+---
+title: "Class10"
+author: "Elaine Schaft"
+date: "2026-03-04"
+output: html_document
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+    code_folding: show
+    code_download: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tidy Data with Built-In Data from 'tidyr'
+
+## 'table1'
+
+```{r}
+tidyr::table1
+```
+
+'table1' is tidy since:
+
+- every row corresponds to a single obs (out unit of analysis is country-year);
+- every col corresponds to one of the four variables we have in the dataset
+
+## 'table2'
+
+```{r}
+tidyr::table2
+```
+
+'table2' is **NOT** tidy since:
+
+- Our country-year (unit of analysis) shows in two different rows
+- our 'type' column contains two different variables
+
+To fix this, what we would like to do is to take that type column and distribute it into two columns.
+
+```{r}
+table2_not_tidy = tidyr::table2
+
+# Fix: making the dataset "wider" [you will lose half your rows]
+table2_tidy_df = tidyr::pivot_wider(
+  data = table2_not_tidy,  # untidy data
+  names_from = type, # names of the new columns should come from type
+  values_from = count # values for these two additional cols should come from "count" col
+)
+
+# Note that this looks exactly like table1
+table2_tidy_df
+```
+
+## 'table3'
+
+```{r}
+tidyr::table3
+```
+
+'table3' is not tidy since the rate column contains two variables. We will want to **separate** the two variables into their own columns. This separation is going to leverage the '/'.
+
+```{r}
+table3_untidy = tidyr::table3
+
+tidyr::separate(
+  data = table3_untidy, # df that has column that needs to be separated
+  col = rate, # this is the name of the col
+  into = c("cases", "population"), # the two new cols that we created
+  sep = "/" # this is optional; the original separator works well since it uses anything that is not a number or a chr to split on
+  )
+
+```
+
+## 'table4a' and 'table4b'
+
+```{r}
+tidyr::table4a
+```
+
+```{r}
+tidyr::table4b
+```
+
+These are both not tidy since the year variable is split into different cols. We violate the rule that each variable has to be in 1 column.
+
+```{r}
+tidyr::table4a # not tidy and we want to make this "longer"
+
+table4a_tidy = tidyr::pivot_longer(
+  data = tidyr::table4a, # since I did not save it
+  cols = 2:3, #c(2, )
+  names_to = 'year',
+  values_to = 'cases'
+)
+```
+
+
+```{r}
+tidyr::table4b # not tidy and we want to make this "longer"
+
+table4b_tidy = tidyr::pivot_longer(
+  data = tidyr::table4b, # since I did not save it
+  cols = '1999':'2000', # backticks are needed since R does not like var to start with a number
+  names_to = 'year',
+  values_to = 'population'
+)
+```
+
+```{r}
+# So in 345, how would you have combined the two tables together"
+table4_tidy = dplyr::left_join(x = table4a_tidy, y = table4b_tidy, by = c("country", "year"))
+
+# for technically correct data, all columns should have the correct class/data type
+table4_tech_correct = 
+  table4_tidy |>
+  dplyr::mutate(
+    year = as.numeric(year) # converted from chr (saw from printing out the tibble) into a number
+  )
+```
+
+```{r}
+## consistent data: "on the cell level, where we are making sure that the values are correct and we have no missing data [typically; depending on how you analyze the data]" -> clean dataset
+```
+

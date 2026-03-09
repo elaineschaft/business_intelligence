@@ -1,0 +1,95 @@
+---
+title: "Class7"
+author: "Elaine Schaft"
+date: "2026-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+vignette(package = 'ellmer') # checking to see what vignettes exist
+vignette(package = 'ellmer', topic = 'structured-data') # pulling the one I want
+
+# usethis::edit_r_environ(scope = "project")
+
+ chat = ellmer::chat_openai(
+  model = "gpt-5-mini-2025-08-07"
+)
+
+chat$chat_structured(
+  "My name is Susan and I'm 13 years old",
+  type = ellmer::type_object(
+    name = ellmer::type_string(),
+    age = ellmer::type_number()
+  )
+)
+
+## For our first demo, we will use the ISA course list as an exmaple
+## From the course list, let us extract the:
+## (a) course title, (b) course_desc and (c) prereqs
+
+isa_bulletin = rvest::read_html("https://bulletin.miamioh.edu/courses-instruction/isa/")
+
+isa_bulletin |>
+  rvest::html_elements("div.courseblock") |>
+  rvest::html_text2() |>
+  # convert to a list per the example
+  as.list() -> prompts # I named it prompts similar to their example (but I could have named it anything I want)
+
+prompts[48]
+
+type_course = ellmer::type_object(
+  course_title = ellmer::type_string(
+    description = "The title of the course. For example, ISA 650: Business Analytics Practicum"
+  ),
+  course_desc = ellmer::type_string(
+    description = "The description of the course. For example, the graduate level Business Analytics...",
+    required = F
+  ),
+  prereqs = ellmer::type_string(
+    description = "The Prerquisite[s] of the course.", required = FALSE
+  )
+)
+
+# do not need to call it again, but putting it here in case you want the example to be stand alone
+chat = ellmer::chat_openai(
+  model = "gpt-5-mini-2025-08-07"
+)
+  
+isa_courses = ellmer::parallel_chat_structured(
+  chat, prompts, type = type_course,
+  include_tokens = T, include_cost = T
+  )
+
+# Now pull data from the BLS image
+
+bls_fig_extraction = 
+  chat$chat_structured(
+    ellmer::content_image_file("bachelors_largest_growth.png"),
+    type = ellmer::type_object(
+      bachelors_degree_occupation = ellmer::type_string(
+        description = "The names of each of the 10 bachelors degree occupations listed in the chart. Separate each occupation with a | "
+      ),
+      projected_employment_change = ellmer::type_string(
+        description = "The projected employment change for each of the bachelor degrees. Separate each projection with a |. I expect 10 different values."
+      ),
+      median_annual_wage = ellmer::type_string(
+        description = "The median annual wage for each of the jobs. Separate each salary with a |. There are 10 different values in the chart."
+      )
+    )
+  )
+
+df <- as.data.frame(
+  lapply(bls_fig_extraction, function(x) trimws(strsplit(x, "\\s*\\|\\s*")[[1]])),
+  stringsAsFactors = FALSE
+)
+
+# optional: nicer column names / ensure 10 rows
+stopifnot(nrow(df) == 10, ncol(df) == 3)
+df
+
+```

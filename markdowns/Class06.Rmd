@@ -1,0 +1,201 @@
+---
+title: "Class 06 - Scraping Webpages (cont.)"
+author: "Elaine Schaft"
+date: "2026-02-23"
+output: html_document
+  toc: TRUE
+  toc_float: TRUE
+  number_sections: TRUE
+  code_folding: show
+  code_download: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Demo 1: Scrapign the Miami University ISA Course Bulletin
+
+My goal is to scrape every course in [MU ISA Course Bulletin](https://bulletin.miamioh.edu/courses-instruction/isa/)
+
+```{r mu_isa}
+# Step 0: check robots.txt
+cat("Based on the robotstxt package, I checked the path and I found that I am allowed to scrape the page. This is illustrated by the output being TRUE.")
+  
+robotstxt::paths_allowed(
+  paths = "https://bulletin.miamioh.edu/courses-instruction/isa/"
+)
+
+# Step 1: Get the HTML into R
+mu_bulletin_page = rvest::read_html("https://bulletin.miamioh.edu/courses-instruction/isa/")
+
+# Steps 2 and 3: get the titles and descriptions and save them  in separate objects
+mu_bulletin_page |>
+  # I removed the nth-child() becuase I wanted to get all the courses
+  # alternitively, I could have used p.courseblocktitle > strong OR even just strong
+  rvest::html_elements("#sc_sccoursedescs > div > p.courseblocktitle > strong") |>
+  rvest::html_text2() -> course_titles
+
+mu_bulletin_page |>
+  rvest::html_elements(".courseblockdesc") |>
+  rvest::html_text2() -> course_descs
+
+mu_bulletin_page |>
+  rvest::html_elements("div p") |>
+  rvest::html_text2() -> test_results
+
+# if you started with a sub optimal selector, you can work your way to the
+# correct final answer as illustrated below
+test_results = test_results[1:100] # which contained print, pdf related things
+tail(test_results)
+
+course_titles_c = test_results[ seq(from = 1, to = 100, by = 2)]
+course_descs_c = test_results[ seq(from = 2, to = 100, by = 2)]
+
+isa_course_df = data.frame(
+  title = course_titles, description = course_descs
+)
+```
+
+
+## A function to scrape other FSB courses
+
+```{r my_function}
+# Based on the first answer in class, we decided to use the suffix of the URL
+# e.g., for https://bulletin.miamioh.edu/courses-instruction/isa/
+# we can use: (a) /isa/, (b) isa/, or (c) just isa [won based on first answer]
+# all answers are equally reasonable
+scrape_fsb_courses = function(suffix = 'isa'){
+  fsb_url = paste0("https://bulletin.miamioh.edu/courses-instruction/", suffix, "/")
+  
+  # note that we used the variable created in the previous step so the URL can change
+  # if you names it like what we had before, you can copy your previous code
+  mu_bulletin_page = rvest::read_html(fsb_url)
+  
+  mu_bulletin_page |>
+  # I removed the nth-child() becuase I wanted to get all the courses
+  # alternitively, I could have used p.courseblocktitle > strong OR even just strong
+  rvest::html_elements("#sc_sccoursedescs > div > p.courseblocktitle > strong") |>
+  rvest::html_text2() -> course_titles
+
+  mu_bulletin_page |>
+  rvest::html_elements(".courseblockdesc") |>
+  rvest::html_text2() -> course_descs
+  course_descs
+  
+df = data.frame(title = course_titles, description = course_descs)
+
+# so to be nice we will add a pause so that we do not overwhelm Miami's servers
+Sys.sleep(2)
+
+return(df) # this is what the function will do
+}
+```
+
+
+## Using out Function: Once
+
+Just to illustrate how the function will be called
+
+```{r use_function_for_finance}
+fin_df = scrape_fsb_courses(suffix = "fin")
+```
+
+## Using out Function: More than Once
+
+With the DRY principle, we do not want to repeat the call above multiple times. So first we will explore doing that via 'for' loop.
+
+```{r use_function_in_a_for_loop}
+fsb_suffix_vec = c('isa', 'fin', 'acc', 'eco', 'esp', 'mgt', 'bus', 'mkt')
+
+fsb_df = data.frame()
+for(name in fsb_suffix_vec){
+  df = scrape_fsb_courses(suffix = name)
+  
+  # binding two data frames by rows (i.e., putting them on top of each other)
+  fsb_df = rbind(fsb_df, df)
+}
+```
+
+## Using out Function: More than Once ('purrr')
+
+Instead of a 'for' loop, we will use the 'purrr::map_df()' for looping across the different departments.
+
+```{r purrr}
+fsb_suffix_vec = c('isa', 'fin', 'acc', 'eco', 'esp', 'mgt', 'bus', 'mkt')
+
+fsb_df_alt = purrr::map_df(.x = fsb_suffix_vec, .f = scrape_fsb_courses)
+```
+
+## Trying it for just one
+
+```{r}
+robotstxt::paths_allowed("https://www.planecrashinfo.com/2025/2025.htm")
+```
+
+
+```{r}
+plane_url = "https://www.planecrashinfo.com/2025/2025.htm"
+
+# step 1 to get that webpage (raw HTML into R)
+plane_webpage = rvest::read_html(plane_url)
+
+# steps 2 and 3 together --> output is to get a "clean" table
+plane_webpage |>
+  rvest::html_elements("center > table") |>
+  rvest::html_table(header = TRUE) |>
+  magrittr::extract2(1) ->
+  df
+```
+
+## Our Own Scraping Function
+
+```{r scrape_crashes}
+crash_urls = paste0("https://www.planecrashinfo.com/", 2025:2026, "/", 2025:2026, ".htm")
+
+scrape_crashes = function(plane_url){
+
+  Sys.sleep(2)
+
+  plane_webpage = rvest::read_html(plane_url)
+
+  # steps 2 and 3 together --> output is to get a "clean" table
+  plane_webpage |>
+    rvest::html_elements("center > table") |>
+    rvest::html_table(header = TRUE) |>
+    magrittr::extract2(1) -> df
+  
+return(df)
+}
+```
+
+## Apply My Function to Multiple Years
+
+```{r scrape_mult_yrs}
+crash_urls = paste0("https://www.planecrashinfo.com/", 2025:2026, "/", 2025:2026, ".htm")
+
+crash_df = purrr::map_df(.x = crash_urls, .f = scrape_crashes)
+```
+
+## Google Careers Scraping
+
+A note on 'robotstxt'
+```{r}
+# returns False
+robotstxt::paths_allowed(paths = "https://www.google.com/about/careers/applications/jobs/results/?q=data%20analyst&location=United%20States&page=1")
+
+# returns TRUE
+robotstxt::paths_allowed(domain = "https://www.google.com/about/",
+                         paths = 'careers')
+
+# By Inspecting the actual robots.txt, we realized that we should not scrape this but we will TRY to do it for the purpose of a class
+
+google_url = "https://www.google.com/about/careers/applications/jobs/results/?q=%22business%20analyst%22&location=United%20States&target_level=MID&target_level=EARLY&target_level=INTERN_AND_APPRENTICE"
+
+google_page = rvest::read_html(google_url)
+
+google_page |> rvest::html_elements("h3") |> rvest::html_text2() -> titles
+
+google_page |> rvest::html_elements("div > span.pwO9Dc.vo5qdf > span:nth-child(2)") |> rvest::html_text2() -> first_location
+```
+

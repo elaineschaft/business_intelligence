@@ -1,0 +1,3 @@
+"0","fin_df = scrape_fsb_courses(suffix = ""fin"")"
+"2","Error in open.connection(x, ""rb"") : cannot open the connection
+"
